@@ -93,7 +93,7 @@ CW_Y = 700
 output_directory = f"vtk_data_{simulation_name}" #Directory name for spatial and pressure cell data
 output_well_data_excel = f"well_data_{simulation_name}.xlsx" #Name of output Excel file
 
-### ============== Run Simulation ====================
+### ============== Run Simulation =====================
 n_ly, n_cells, dz_array, wells, perm_h, perm_v, poro, hcap, tcond = simparams_2DARTS_input(dx, dy,
                                                                                             dz_top, dz_res, dz_bot,
                                                                                             dom_X, dom_Y,

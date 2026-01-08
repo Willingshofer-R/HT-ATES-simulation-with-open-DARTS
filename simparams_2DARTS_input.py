@@ -50,6 +50,7 @@ def simparams_2DARTS_input(dx, dy, dz_top, dz_res, dz_bot,
     reservoir = np.ones((n_x, n_y, n_ly_res))
     bot = np.ones((n_x, n_y, n_ly_bot))
 
+
     # Permeability
     perm_h_top = top * k_h_top
     perm_v_top = perm_h_top / ani_top

@@ -59,7 +59,7 @@ class Model(DartsModel):
 
         self.geothermal_grad = geothermal_grad
 
-        # ------------create pre-defined physics for geothermal------------
+        # ------------create pre-defined physics for geothermal-------------
         property_container = PropertyContainer()
         self.physics = Geothermal(self.timer, n_points, 0.1, 150, 500, 7500, cache=False)
         self.physics.add_property_region(property_container)

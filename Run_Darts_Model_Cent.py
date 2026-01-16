@@ -1,47 +1,27 @@
-#import pickle
+#Load model creation
 from Basic_Ates_Model_Cent import Model
-from simparams_2DARTS_input import simparams_2DARTS_input
+#Load helper functions
+from simparams_2_DARTS_input import simparams_2DARTS_input
+from simparams_2_DARTS_input import geomod_xarray_2DARTS_input
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
 from Read_well_h5_opendarts import read_well_h5, write_well_perforation_id
 
 ### =========== Simulation settings ==============
 simulation_name = 'sim_1W_V300_T70' # Can be any string, used for naming the output Excel file and vtk data directory
+# Specify the path to a manually inputted geomodel
+# If nothing is specified, the reservoir characteristics later in the code are used
+input_geomod_path = None #Path(r"C:\path\to\your\geomodel.nc")
 
-# ------------- Reservoir characteristics ---------
+# -------------- Output name and location -------
+output_directory = f"vtk_data_{simulation_name}" #Directory name for spatial and pressure cell data
+output_well_data_excel = f"well_data_{simulation_name}.xlsx" #Name of output Excel file
+
+# --------------- Initial conditions reservoir -------
 depth_to_top = 120 #[m], the depth to the top boundary of the upper clay layer (== top of geomodel)
 geothermal_grad = 18 #[K / km], the geothermal gradient for the initial condition of the reservoir
-
-# Thickness [m]
-H_top = 25
-H_res = 60
-H_bot = 20
-
-# Horizontal Permeability [mD]
-k_h_top = 0.1
-k_h_res = 1000
-k_h_bot = 0.1
-
-# Anisotropy ratio [-]
-ani_top = 5
-ani_res = 5
-ani_bot = 5
-
-# Porosity [-]
-por_top = 0.3
-por_res = 0.3
-por_bot = 0.3
-
-# Volumetric Heat Capacity [kJ/m3/K)]
-Cv_top = 2000
-Cv_res = 2000
-Cv_bot = 2000
-
-# Thermal Conductivity [kJ/m/day/K]
-lam_top = 200
-lam_res = 200
-lam_bot = 200
 
 # -------------- Operational parameters -----------------------
 # Well temperatures [K]
@@ -70,40 +50,81 @@ max_ts = 30 #Maximum time step size [days]
 dt_mult = 8 #Time step upscaling [-]
 set_transition_runtime = 1e-3 #dt after an operational period change [days]
 
-# Spatial Discretization cell size [m]
-dx = 10
-dy = 10
-## NOTE: H_top, H_res, H_bot need to be exactly divisible by dz_top, dz_res, dz_bot in the current version of the code
-dz_top = 5
-dz_res = 5
-dz_bot = 5
+# ------------- Reservoir model characteristics --------
 
-# The horizontal domain size in which the HT-ATES simulation takes place [m]
-## NOTE: dom_X and dom_Y need to be exactly divisible by dx and dy in the current version of the code
-dom_X = 600
-dom_Y = 1000
+if geomod is not None and geomod.exists():
+    print(f"Using geomodel: {input_geomodel_path.name}")
+    n_ly, n_cells, dz_array, wells, perm_h, perm_v, poro, hcap, tcond = geomod_xarray_2DARTS_input(geomod_path)
+else:
+    print("Geomodel not found : using default 3 layer model")
+    # ------------- Default 3 layer model  ---------
+    # Thickness [m]
+    H_top = 25
+    H_res = 60
+    H_bot = 20
 
-# The spatial coordinates of the well in the reservoir [m], must be within [0 and dom_X]
-HW_X = 300
-HW_Y = 300
-CW_X = 300
-CW_Y = 700
+    # Horizontal Permeability [mD]
+    k_h_top = 0.1
+    k_h_res = 1000
+    k_h_bot = 0.1
 
-# -------------- Output name and location -------
-output_directory = f"vtk_data_{simulation_name}" #Directory name for spatial and pressure cell data
-output_well_data_excel = f"well_data_{simulation_name}.xlsx" #Name of output Excel file
+    # Anisotropy ratio [-]
+    ani_top = 5
+    ani_res = 5
+    ani_bot = 5
+
+    # Porosity [-]
+    por_top = 0.3
+    por_res = 0.3
+    por_bot = 0.3
+
+    # Volumetric Heat Capacity [kJ/m3/K)]
+    Cv_top = 2000
+    Cv_res = 2000
+    Cv_bot = 2000
+
+    # Thermal Conductivity [kJ/m/day/K]
+    lam_top = 200
+    lam_res = 200
+    lam_bot = 200
+
+    # Spatial Discretization cell size [m]
+    dx = 10
+    dy = 10
+    ## NOTE: H_top, H_res, H_bot need to be exactly divisible by dz_top, dz_res, dz_bot in the current version of the code
+    dz_top = 5
+    dz_res = 5
+    dz_bot = 5
+
+    # The horizontal domain size in which the HT-ATES simulation takes place [m]
+    ## NOTE: dom_X and dom_Y need to be exactly divisible by dx and dy in the current version of the code
+    dom_X = 600
+    dom_Y = 1000
+
+    # The spatial coordinates of the well in the reservoir [m], must be within [0 and dom_X]
+    HW_X = 300
+    HW_Y = 300
+    CW_X = 300
+    CW_Y = 700
+
+    n_ly, n_cells, dz_array, wells, perm_h, perm_v, poro, hcap, tcond = simparams_2DARTS_input(dx, dy,
+                                                                                               dz_top, dz_res, dz_bot,
+                                                                                               dom_X, dom_Y,
+                                                                                               H_top, H_res, H_bot,
+                                                                                               HW_X, HW_Y, CW_X, CW_Y,
+                                                                                               k_h_top, k_h_res,
+                                                                                               k_h_bot,
+                                                                                               ani_top, ani_res,
+                                                                                               ani_bot,
+                                                                                               por_top, por_res,
+                                                                                               por_bot,
+                                                                                               Cv_top, Cv_res, Cv_bot,
+                                                                                               lam_top, lam_res,
+                                                                                               lam_bot)
+
+
 
 ### ============== Run Simulation =====================
-n_ly, n_cells, dz_array, wells, perm_h, perm_v, poro, hcap, tcond = simparams_2DARTS_input(dx, dy,
-                                                                                            dz_top, dz_res, dz_bot,
-                                                                                            dom_X, dom_Y,
-                                                                                            H_top, H_res, H_bot,
-                                                                                            HW_X, HW_Y, CW_X, CW_Y,
-                                                                                            k_h_top, k_h_res, k_h_bot,
-                                                                                            ani_top, ani_res, ani_bot,
-                                                                                            por_top, por_res, por_bot,
-                                                                                            Cv_top, Cv_res, Cv_bot,
-                                                                                            lam_top, lam_res, lam_bot)
 #Input model params here
 m = Model(n_ly, n_cells, dx, dy, dz_array,
           perm_h, perm_v, poro, hcap, tcond,

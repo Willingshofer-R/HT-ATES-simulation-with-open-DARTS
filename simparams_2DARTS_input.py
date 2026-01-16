@@ -1,6 +1,6 @@
 import numpy as np
 
-def simparams_2DARTS_input(dx, dy, dz_top, dz_res, dz_bot,
+def simparams_2_DARTS_input(dx, dy, dz_top, dz_res, dz_bot,
                            dom_X, dom_Y, H_top, H_res, H_bot,
                            HW_X, HW_Y, CW_X, CW_Y,
                            k_h_top, k_h_res, k_h_bot, ani_top, ani_res, ani_bot,
@@ -8,7 +8,7 @@ def simparams_2DARTS_input(dx, dy, dz_top, dz_res, dz_bot,
                            lam_top, lam_res, lam_bot):
     """
     Convert Run_Darts_Model input parameters to valid DARTS model initialization.
-    Grid ordering is (nz, ny, nx). -> Double check!!
+    Grid ordering is (nx, ny, nz)
     """
 
     # Number of vertical layers
@@ -94,6 +94,43 @@ def simparams_2DARTS_input(dx, dy, dz_top, dz_res, dz_bot,
     return (
         n_ly,
         n_cells,
+        dz_array,
+        well_indices,
+        perm_h_full,
+        perm_v_full,
+        porosity_full,
+        Cv_full,
+        lam_full
+    )
+
+def geomod_xarray_2DARTS_input (geomod):
+    geomodel = xr.load_dataset(geomod_path)
+    XGR = geomodel['XGR'].values
+    YGR = geomodel['YGR'].values
+    ZGR = geomodel['ZGR'].values
+    porosity = geomodel['porosity'].values
+    horizontal_permeability = geomodel['permeability'].values
+    vertical_permeability = geomodel['vertical_permeability'].values
+    Cp = geomodel['Cv'].values
+    lam = geomodel['lam'].values
+    n_hot = geomodel.attrs["n_hot_wells"]
+    n_cold = geomodel.attrs["n_warm_wells"]
+    n_ly_cap = int(geomodel.attrs["n_ly_cap"])
+    n_ly_res = int(geomodel.attrs["n_ly_res"])
+    n_ly_bot = int(geomodel.attrs["n_ly_bot"])
+
+    dx_array = np.diff(XGR)
+    dy_array = np.diff(YGR)
+    dz_array = np.diff(ZGR)
+
+    n_ly = np.array([n_ly_cap, n_ly_res, n_ly_bot])
+
+
+    return (
+        n_ly,
+        n_cells,
+        dx_array,
+        dy_array,
         dz_array,
         well_indices,
         perm_h_full,

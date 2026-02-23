@@ -283,8 +283,8 @@ def property_fill(
         kv = kh / soil_df['ani'].to_numpy(float)
 
     if mday_2_mD:
-        kh = hydraulic_con_2_mD(15.0, kh)
-        kv = hydraulic_con_2_mD(15.0, kv)
+        kh = hydraulic_con_2_mD(13.0, kh)
+        kv = hydraulic_con_2_mD(13.0, kv)
 
     k = 0
     for i in range(len(soil_df)):
@@ -303,7 +303,7 @@ def property_fill(
     print(f"  kh range: {perm_h.min():.2e} – {perm_h.max():.2e} mD")
     print(f"  kv range: {perm_v.min():.2e} – {perm_v.max():.2e} mD")
 
-    return perm_h, perm_v, poro, Tcond, Cv
+    return perm_h.flatten(order='F'), perm_v.flatten(order='F'), poro.flatten(order='F'), Tcond.flatten(order='F'), Cv.flatten(order='F')
 
 
 def hydraulic_con_2_mD(T, Kh):

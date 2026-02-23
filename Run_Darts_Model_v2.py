@@ -1,10 +1,12 @@
 #Load model creation
 from Basic_Ates_Model_v2 import Model
+import os
 #Load helper functions
 from create_geomod import create_ZGR
 from create_geomod import create_XY_grid
 from create_geomod import property_fill
 from create_geomod import get_well_rates_block
+from plot_func import plot_YZ_section
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -20,24 +22,27 @@ image_name = 'test_XY_grid'
 # Output vtk and xlsx data
 output_directory = f"vtk_data_{simulation_name}" #Directory name for spatial and pressure cell data
 output_well_data_excel = f"well_data_{simulation_name}.xlsx" #Name of output Excel file
+os.makedirs(output_directory, exist_ok=True)
 
 # -------------- Input soil and well data -------
+# Most recent Delft subsurface model based on the data provided by Alexis
 soil = pd.DataFrame({
-    'z_top':  [75., 123, 143, 145, 151, 157, 163, 167, 183],
-    'z_bot':  [123, 143, 145, 151, 157, 163, 167, 183, 209],
-    'type':   ['cap','res','res','res','res','res','res','res','bot'],
-    'n_layers':[5, 20, 2, 6, 6, 6, 4, 16, 5],
-    'kh':     [0.05, 10.5, 0.05, 11.6, 0.044, 17.7,0.057,12.30,0.050],
-    'ani':    [10, 4, 4, 4, 4, 4, 4, 4, 10],
-    'poro':   [0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35],
-    'tcond':  [155.5, 190.0, 164.2, 190.0, 164.2, 190.0, 164.2, 190.0, 155.5],
-    'hcap':   [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000]
+    'z_top':  [80., 110, 135, 140, 160, 165, 185],
+    'z_bot':  [110, 135, 140, 160, 165, 185, 230],
+    'type':   ['cap','res','res','res','res','res','bot'],
+    'n_layers':[7, 25, 5, 20, 5, 20, 10], #dz = 1 within the reservoir
+    'kh':     [0.1, 12.3, 0.1, 10, 0.1, 8, 0.1],
+    'ani':    [10, 4, 10, 4, 10, 4, 10],
+    'poro':   [0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35],
+    'tcond':  [155.5, 190.0, 164.2, 190.0, 164.2, 190.0, 155.5],
+    'hcap':   [2000, 2000, 2000, 2000, 2000, 2000, 2000]
 })
 
+# Example input for the Delft Case
 wells = pd.DataFrame({
-    'x': [-20.0, 0.0, 20.0, 0.0, 0.0, 0.0],
-    'y': [0.0, 0.0, 0.0, 300.0, 318.0, 336.0],
-    'type': ['H', 'H', 'H', 'C', 'C', 'C']
+    'x': [-20.0, 0.0, 0.0, 0.0, 0.0],
+    'y': [0.0, 0.0, 300.0, 318.0, 336.0],
+    'type': ['H', 'H', 'C', 'C', 'C']
 })
 
 # --------------- Initial conditions reservoir -------
@@ -49,8 +54,8 @@ InjT = 273.15 + 90 # (K)
 TCutOff = 273.15 + 50 # (K), Serves as the injection temperature of the warm well
 
 # Annual total (i.e. over all wells) storage volumes (from the hot well perspective)
-V_in_hot = 500000  # (m3/year)
-V_out_hot = 450000 # (m3/year)
+V_in_hot = 200000  # (m3/year)
+V_out_hot = 200000 # (m3/year)
 # Block-function Operational profile
 daysprofile = [120, 60, 120, 65] # (days)
 storage_periods = ['Charge', 'Rest', 'Discharge', 'Rest']
@@ -63,7 +68,7 @@ dt_mult = 8 #Time step upscaling (-)
 set_transition_runtime = 1e-3 #dt after an operational period change [days]
 
 # XY plane discretization settings
-d_min = 2.5 # Cell dx and dy of the smallest cells surrounding the wells (m)
+d_min = 1 # Cell dx and dy of the smallest cells surrounding the wells (m)
 d_min_bound = 5 # Domain-width surrounding the wells with cell size d_min (m)
 d_med = 10 # Cell dx and dy of the grid around the d_min_bound finest grid (m)
 d_med_bound = 200 # Domain-width surrounding the wells with cell size d_med (m)
@@ -71,13 +76,13 @@ d_max = 100 # The maximum cell size in the coarsest, outermost part of the grid 
 mult_fact = 1.5 # How aggressively d_med is upscaled to d_max (recommended: 1 < mult_fact < 2) (-)
 n_max_bound = 3 # How many (buffer) cells of size d_max should bound the terrain (-)
 
-# ------------- Run geomod creation functions  --------
-dZ_array, n_ly, depth_to_top = create_ZGR(soil_uni, dz_mult = 1.8, print_stat = True)
-dX_array, dY_array, well_indices = create_XY_grid (wells_mono, d_min, d_min_bound, d_med, d_med_bound, d_max, mult_fact, n_max_bound,
-                                                   XY_GR_plot = True, image_loc = image_loc, image_name = image_name)
-perm_h, perm_v, poro, tcond, hcap = property_fill(dX_array, dY_array, soil_uni, vertical_perm=False, mday_2_mD=True)
-n_hot, n_cold, Q_hot_inj, Q_hot_prod, Q_cold_prod, Q_cold_inj = get_well_rates_block(V_in_hot, V_out_hot, daysprofile, storage_periods, wells_mono)
 
+# ------------- Run geomod creation functions  --------
+dZ_array, n_ly, depth_to_top = create_ZGR(soil, dz_mult = 1.8, print_stat = True)
+dX_array, dY_array, well_indices = create_XY_grid (wells, d_min, d_min_bound, d_med, d_med_bound, d_max, mult_fact, n_max_bound,
+                                                   XY_GR_plot = True, image_loc = image_loc, image_name = image_name)
+perm_h, perm_v, poro, tcond, hcap = property_fill(dX_array, dY_array, soil, vertical_perm=False, mday_2_mD=True)
+n_hot, n_cold, Q_hot_inj, Q_hot_prod, Q_cold_prod, Q_cold_inj = get_well_rates_block(V_in_hot, V_out_hot, daysprofile, storage_periods, wells)
 
 ### ============== Run Simulation =====================
 #Input model params here
@@ -109,12 +114,21 @@ for k in range(set_run_years):
             print('Operation: Rest')
 
         m.run(runtime, restart_dt=set_transition_runtime)
+        # Modify the m.run to automatically store data in an x-array DS.
+        ## for instance settings as: save_reservoir_data
+
+        ## Order is F!
 
         print("\nIterr :", iterr, "\tYear :", k, "\tRun Time :", runtime)
         print("\n")
         iterr += 1
 m.print_timers()
 m.print_stat()
+
+# Comment the following 2 lines to ensure no 3D output data is generated
+output_props = ['temperature', 'pressure']
+m.output.output_to_vtk(output_properties=output_props, output_directory = output_directory)
+
 m.output.store_well_time_data()
 # %%-----------------Write Results to Excel-----------------
 # output well information to Excel file
@@ -122,6 +136,13 @@ td = pd.DataFrame.from_dict(m.physics.engine.time_data)
 writer = pd.ExcelWriter(output_well_data_excel)
 td.to_excel(writer, 'Sheet1')
 writer.close()
+
+# %%-----------------Plot Reservoir temperature data -----------------
+plot_YZ_section (dX_array, dY_array, dZ_array, depth_to_top,
+                well_indices['well_index_x'].iloc[0], well_indices['well_index_y'].iloc[0], 200,
+                'temperature[K]', 90, 10,
+                output_directory, 1, aspect = 1,  contour = True,
+                safe_loc = None)
 
 # %%-----------------Plot Well Data-----------------
 # plot temperature at production well and technological limit
@@ -149,7 +170,7 @@ for w in m.reservoir.wells:
     ax[2].set_ylabel('Flow Rate (m3/day)', fontsize=14)
     ax[2].grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig(f'M_dmin_05_{d_min}_{d_min_bound}_{w.name}.png', dpi=300, bbox_inches='tight')
+    plt.savefig(f'k_low_M_dmin_035_{d_min}_{d_min_bound}_{w.name}.png', dpi=300, bbox_inches='tight')
 
 # %%-----------------read H5-----------------
 well_id, well_depth = write_well_perforation_id(m)

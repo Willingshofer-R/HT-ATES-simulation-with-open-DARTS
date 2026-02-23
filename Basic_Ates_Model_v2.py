@@ -114,8 +114,8 @@ class Model(DartsModel):
         return
 
     def set_wells(self):
-        top_ind = self.n_ly_cap + 1
-        btm_ind = self.n_ly_cap + self.n_ly_res - 1
+        top_ind = self.n_ly_cap
+        btm_ind = self.n_ly_cap + self.n_ly_res
 
         well_counters = {"H": 0, "C": 0}
 

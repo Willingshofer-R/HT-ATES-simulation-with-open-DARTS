@@ -68,10 +68,10 @@ dt_mult = 8 #Time step upscaling (-)
 set_transition_runtime = 1e-3 #dt after an operational period change [days]
 
 # XY plane discretization settings
-d_min = 1 # Cell dx and dy of the smallest cells surrounding the wells (m)
+d_min = 2.5 # Cell dx and dy of the smallest cells surrounding the wells (m)
 d_min_bound = 5 # Domain-width surrounding the wells with cell size d_min (m)
 d_med = 10 # Cell dx and dy of the grid around the d_min_bound finest grid (m)
-d_med_bound = 200 # Domain-width surrounding the wells with cell size d_med (m)
+d_med_bound = 200 # Domain-width surrounding the d_min_bound-domain with cell size d_med (m)
 d_max = 100 # The maximum cell size in the coarsest, outermost part of the grid (m)
 mult_fact = 1.5 # How aggressively d_med is upscaled to d_max (recommended: 1 < mult_fact < 2) (-)
 n_max_bound = 3 # How many (buffer) cells of size d_max should bound the terrain (-)
@@ -97,14 +97,14 @@ for k in range(set_run_years):
     for i, runtime in enumerate(daysprofile):
         if storage_periods[i] == 'Charge':
 
-            m.set_rate_hot(Q_hot_inj, temp=InjT, func='inj')
-            m.set_rate_cold(Q_cold_prod, func='prod')
+            m.set_rate_hot(Q_hot_inj.item(), temp=InjT, func='inj')
+            m.set_rate_cold(Q_cold_prod.item(), func='prod')
             print('Operation: Charge')
 
         elif storage_periods[i] == 'Discharge':
 
-            m.set_rate_hot(Q_hot_prod, func='prod')
-            m.set_rate_cold(Q_cold_inj, temp=TCutOff, func='inj')
+            m.set_rate_hot(Q_hot_prod.item(), func='prod')
+            m.set_rate_cold(Q_cold_inj.item(), temp=TCutOff, func='inj')
             print('Operation: Discharge')
 
         elif storage_periods[i] == 'Rest':
@@ -114,11 +114,6 @@ for k in range(set_run_years):
             print('Operation: Rest')
 
         m.run(runtime, restart_dt=set_transition_runtime)
-        # Modify the m.run to automatically store data in an x-array DS.
-        ## for instance settings as: save_reservoir_data
-
-        ## Order is F!
-
         print("\nIterr :", iterr, "\tYear :", k, "\tRun Time :", runtime)
         print("\n")
         iterr += 1

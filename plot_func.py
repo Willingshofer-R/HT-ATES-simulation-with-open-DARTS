@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import pyvista as pv
+#import pyvista as pv
 import pandas as pd
 
 def plot_grid(
@@ -71,7 +71,8 @@ def plot_grid(
     if show:
         plt.show()
 
-def plot_YZ_section (d_X_array, d_Y_array, d_Z_array, depth_to_top,
+def plot_YZ_section (d_X_array, d_Y_array, d_Z_array,
+                     X_min, Y_min, depth_to_top,
                      X_slice_index, center_Y_index, plot_domain,
                      var_name, V_max, V_min,
                      vts_location, time_step, aspect = 3,  contour = True,
@@ -113,8 +114,8 @@ def plot_YZ_section (d_X_array, d_Y_array, d_Z_array, depth_to_top,
     ny = len(d_Y_array)
     nz = len(d_Z_array)
 
-    #XGR = np.insert(np.cumsum(d_X_array), 0, 0)
-    YGR = np.insert(np.cumsum(d_Y_array), 0, 0)
+    XGR = np.insert(np.cumsum(d_X_array), 0, 0) + X_min
+    YGR = np.insert(np.cumsum(d_Y_array), 0, 0) + Y_min
     ZGR = np.insert(np.cumsum(d_Z_array), 0 ,0) + depth_to_top
 
     half_width = plot_domain / 2

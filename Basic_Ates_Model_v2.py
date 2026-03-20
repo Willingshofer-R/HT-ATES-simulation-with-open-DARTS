@@ -137,10 +137,9 @@ class Model(DartsModel):
             for k in range(top_ind, btm_ind + 1):
                 self.reservoir.add_perforation(
                     well_name,
-                    cell_index=(ix, iy, k),
+                    res_cell_idx=(ix, iy, k),
                     verbose=True,
-                    multi_segment=False,
-                    well_indexD=0,
+                    well_indexD=None,
                     skin = 10
                 )
 

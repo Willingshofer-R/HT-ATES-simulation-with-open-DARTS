@@ -226,12 +226,16 @@ def create_XY_grid(
         d_min_bound, d_med_bound, mult_fact, n_max_bound, 'x'
     )
 
+    X_min = np.min(XGR)
+
     YGR = build_axis_grid(
         hot['y'].to_numpy(),
         cold['y'].to_numpy(),
         d_min, d_med, d_max,
         d_min_bound, d_med_bound, mult_fact, n_max_bound, 'y'
     )
+
+    Y_min = np.min(YGR)
 
     well_idx_records = []
 
@@ -253,7 +257,7 @@ def create_XY_grid(
     if XY_GR_plot:
         plot_grid(XGR, YGR, image_loc, image_name, wells_df, show=True, save=True)
 
-    return np.diff(XGR), np.diff(YGR), well_idx_df
+    return X_min, Y_min, np.diff(XGR), np.diff(YGR), well_idx_df
 
 def property_fill(
     dX_array,
@@ -344,6 +348,7 @@ def get_well_rates_block(V_in_hot, V_out_hot, daysprofile, storage_periods, well
     daysprofile = np.asarray(daysprofile)
 
     charge_idx = [i for i, p in enumerate(storage_periods) if p == 'Charge']
+
     discharge_idx = [i for i, p in enumerate(storage_periods) if p == 'Discharge']
 
     # Well rates [m3/day]
